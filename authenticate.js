@@ -6,6 +6,7 @@ const ExtractJwt = require('passport-jwt').ExtractJwt;
 const jwt = require('jsonwebtoken');
 
 const config = require('./config.js');
+const Campsite = require('./models/campsite');
 
 exports.local = passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
@@ -38,3 +39,27 @@ exports.jwtPassport = passport.use(
 );
 
 exports.verifyUser = passport.authenticate('jwt', {session: false});
+
+exports.verifyAdmin = (req, res, next) => {
+    if (!req.user.admin) {
+        const err = new Error('You are not authorized to perform this operation!');
+        res.statusCode = 403;
+        return next(err);
+    } else {
+        return next();
+    }
+};
+
+exports.verifyAuthor = (req, res, next) => {
+    Campsite.findById(req.params.campsiteId)
+    .then(campsite => {
+        if((!campsite.comments.id(req.params.commentId).author._id).equals(req.user._id)) {
+            const err = new Error('You are not authorized to perform this operation!');
+            res.statusCode = 403;
+            return next(err);
+        } else {
+            return next();
+        }
+    })
+    .catch(err => next(err))
+};
