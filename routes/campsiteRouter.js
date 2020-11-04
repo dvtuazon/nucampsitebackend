@@ -171,8 +171,8 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
 .put(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
-        if ((campsite.comments.id(req.params.commentId).author._id).equals(req.user._id)) {
-            if (campsite && campsite.comments.id(req.params.commentId)) {
+        if (campsite && campsite.comments.id(req.params.commentId)) {
+            if ((campsite.comments.id(req.params.commentId).author._id).equals(req.user._id)) {
                 if (req.body.rating) {
                     campsite.comments.id(req.params.commentId).rating = req.body.rating;
                 }
@@ -186,18 +186,18 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
                     res.json(campsite);
                 })
                 .catch(err => next(err));
-            } else if (!campsite) {
-                err = new Error(`Campsite ${req.params.campsiteId} not found`);
-                err.status = 404;
-                return next(err);
             } else {
-                err = new Error(`Comment ${req.params.commentId} not found`);
-                err.status = 404;
+                err = new Error('You are not the author of that comment!');
+                err.status = 403;
                 return next(err);
             }
+        } else if (!campsite) {
+            err = new Error(`Campsite ${req.params.campsiteId} not found`);
+            err.status = 404;
+            return next(err);
         } else {
-            err = new Error('You did not post this comment!');
-            err.status = 403;
+            err = new Error(`Comment ${req.params.commentId} not found`);
+            err.status = 404;
             return next(err);
         }
     })
@@ -206,8 +206,8 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
 .delete(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
-        if ((campsite.comments.id(req.params.commentId).author._id).equals(req.user._id)) {
-            if (campsite && campsite.comments.id(req.params.commentId)) {
+        if (campsite && campsite.comments.id(req.params.commentId)) {
+            if ((campsite.comments.id(req.params.commentId).author._id).equals(req.user._id)) {
                 campsite.comments.id(req.params.commentId).remove();
                 campsite.save()
                 .then(campsite => {
@@ -216,18 +216,17 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
                     res.json(campsite);
                 })
                 .catch(err => next(err));
-            } else if (!campsite) {
-                err = new Error(`Campsite ${req.params.campsiteId} not found`);
-                err.status = 404;
-                return next(err);
             } else {
-                err = new Error(`Comment ${req.params.commentId} not found`);
-                err.status = 404;
-                return next(err);
+                err = new Error('You are not the author of that comment!');
+                err.status = 403;
             }
+        } else if (!campsite) {
+            err = new Error(`Campsite ${req.params.campsiteId} not found`);
+            err.status = 404;
+            return next(err);
         } else {
-            err = new Error('You did not post this comment!');
-            err.status = 403;
+            err = new Error(`Comment ${req.params.commentId} not found`);
+            err.status = 404;
             return next(err);
         }
     })
